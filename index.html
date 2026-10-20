@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>КАНБАН — управление ассортиментом</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#172033;background:#f4f6fa}*{box-sizing:border-box}body{margin:0}header{background:#14243b;color:#fff;padding:22px max(18px,calc((100% - 1200px)/2))}h1{margin:0 0 6px;font-size:26px}header p{margin:0;color:#d2dbea}.wrap{max-width:1200px;margin:auto;padding:20px}.toolbar,.stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}.panel,.stat,.lane{background:#fff;border:1px solid #e0e5ee;border-radius:12px;padding:14px}.toolbar{align-items:center}.toolbar input,.toolbar select,.toolbar button{font:inherit;padding:10px;border:1px solid #cbd3e1;border-radius:8px;background:white}.toolbar button{background:#1c65d1;color:white;border:0;font-weight:600;cursor:pointer}.stat{flex:1;min-width:150px}.stat small{display:block;color:#657187}.stat strong{font-size:23px}.board{display:grid;grid-template-columns:repeat(3,minmax(230px,1fr));gap:14px}.lane{min-height:240px;background:#eef2f8;padding:12px}.lane h2{font-size:16px;margin:0 0 12px}.count{color:#657187;font-weight:400}.item{background:white;border:1px solid #dce2eb;border-radius:9px;padding:12px;margin-bottom:9px;box-shadow:0 1px 2px #1720330a}.item strong{display:block;margin-bottom:6px}.meta{font-size:12px;color:#647188;line-height:1.6}.tag{display:inline-block;background:#e8f1ff;color:#1a55a5;border-radius:5px;padding:3px 6px;font-size:11px;margin-top:7px}.empty{color:#69768b;font-size:13px}.note{color:#68748a;font-size:13px;margin:14px 0}@media(max-width:760px){.board{grid-template-columns:1fr}.wrap{padding:12px}header{padding:18px 14px}}
+</style>
+</head>
+<body>
+<header><h1>КАНБАН</h1><p>Контроль ассортимента и пополнения · Сантехника и инженерные системы</p></header>
+<main class="wrap">
+<div class="toolbar">
+<label class="panel">Загрузить Excel/CSV <input id="file" type="file" accept=".xlsx,.xls,.csv" style="display:block;max-width:250px;margin-top:8px"></label>
+<input id="search" placeholder="Поиск по артикулу или названию">
+<select id="category"><option value="">Все категории</option><option>Сантехника</option><option>Инженерные системы</option></select>
+<button id="demo">Показать пример</button>
+</div>
+<div class="stats">
+<div class="stat"><small>Позиций на доске</small><strong id="total">0</strong></div>
+<div class="stat"><small>Ниже минимума / срочно</small><strong id="low">0</strong></div>
+<div class="stat"><small>Ноль, были продажи</small><strong id="zero">0</strong></div>
+<div class="stat"><small>Пополнение по спросу</small><strong id="restock">0</strong></div>
+</div>
+<p class="note" id="status">Загрузите Excel-отчёт Канбан. Файл обрабатывается локально в браузере и не отправляется на сервер.</p>
+<section class="board">
+<div class="lane"><h2>Срочно проверить <span class="count" id="n1">(0)</span></h2><div id="c1"></div></div>
+<div class="lane"><h2>Ноль, были продажи <span class="count" id="n2">(0)</span></h2><div id="c2"></div></div>
+<div class="lane"><h2>Пополнение по спросу <span class="count" id="n3">(0)</span></h2><div id="c3"></div></div>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);let rows=[];
+const demoRows=[
+{"Приоритет":"P1 — ниже минимума","Категория":"Сантехника","Артикул":"414000001","Наименование":"Пример: смеситель для раковины","Цена продажи":4990,"Остаток":0,"Количество продаж":4,"Рекомендация":"Проверить остаток и сформировать заказ"},
+{"Приоритет":"P1 — ноль, были продажи","Категория":"Сантехника","Артикул":"414000002","Наименование":"Пример: душевой комплект","Цена продажи":7990,"Остаток":0,"Количество продаж":2,"Рекомендация":"Проверить дату и подтверждение поступления"},
+{"Приоритет":"P2 — пополнение по спросу","Категория":"Инженерные системы","Артикул":"453000001","Наименование":"Пример: комплект подключения","Цена продажи":1290,"Остаток":2,"Количество продаж":1,"Рекомендация":"Проверить остатки/заказы, затем пополнить"}];
+function norm(s){return String(s??'').trim().toLowerCase()}
+function pick(r,keys){const k=Object.keys(r);for(const wanted of keys){const found=k.find(x=>norm(x)===norm(wanted)||norm(x).includes(norm(wanted)));if(found!==undefined)return r[found]}return ''}
+function lane(r){const p=norm(pick(r,['Приоритет','Статус','Канбан']));if(p.includes('ноль')||p.includes('zero'))return 2;if(p.includes('p1')||p.includes('ниже минимум')||p.includes('срочно'))return 1;return 3}
+function money(v){const n=Number(String(v??'').replace(/\s/g,'').replace(',','.'));return v!==''&&Number.isFinite(n)?n.toLocaleString('ru-RU',{maximumFractionDigits:2})+' ₽':(v||'—')}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function card(r){const name=pick(r,['Наименование','Номенклатура','Товар','Название'])||'Без названия';const art=pick(r,['Артикул','Код товара'])||'—';const price=pick(r,['Цена продажи','Цена']);const qty=pick(r,['Остаток','Остаток, шт','Количество остаток']);const sales=pick(r,['Количество продаж, шт','Количество продаж','Продажи, шт']);const cat=pick(r,['Категория','Отдел'])||'';const rec=pick(r,['Рекомендация','Действие'])||'Проверить остатки и заказы';return '<article class="item"><strong>'+esc(name)+'</strong><div class="meta">Артикул: '+esc(art)+'<br>Цена: '+esc(money(price))+(qty!==''?'<br>Остаток: '+esc(qty):'')+(sales!==''?'<br>Продажи, шт.: '+esc(sales):'')+'</div><span class="tag">'+esc(cat||rec)+'</span><div class="meta" style="margin-top:7px">'+esc(rec)+'</div></article>'}
+function render(){const q=norm($('search').value),cat=$('category').value;const filtered=rows.filter(r=>(!cat||String(pick(r,['Категория','Отдел'])).includes(cat))&&(!q||norm(Object.values(r).join(' ')).includes(q)));$('total').textContent=filtered.length;$('low').textContent=filtered.filter(r=>lane(r)===1).length;$('zero').textContent=filtered.filter(r=>lane(r)===2).length;$('restock').textContent=filtered.filter(r=>lane(r)===3).length;[1,2,3].forEach(n=>{const a=filtered.filter(r=>lane(r)===n);$('n'+n).textContent='('+a.length+')';$('c'+n).innerHTML=a.map(card).join('')||'<p class="empty">Нет позиций</p>'})}
+$('search').addEventListener('input',render);$('category').addEventListener('change',render);$('demo').onclick=()=>{rows=demoRows;$('status').textContent='Показан демонстрационный пример, а не реальные остатки. Загрузите рабочий Excel для анализа.';render()};
+$('file').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const buf=await f.arrayBuffer();let wb;if(f.name.toLowerCase().endsWith('.csv')){const txt=new TextDecoder('utf-8').decode(buf);wb=XLSX.read(txt,{type:'string'})}else wb=XLSX.read(buf,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];rows=XLSX.utils.sheet_to_json(ws,{defval:''});$('status').textContent='Загружено: '+f.name+' · лист: '+wb.SheetNames[0]+' · строк: '+rows.length+'. Проверьте, что выбран лист с заголовками и данными.';render()}catch(err){$('status').textContent='Не удалось прочитать файл: '+err.message}});
+render();
+</script>
+</body></html>
