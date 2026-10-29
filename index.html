@@ -2,88 +2,76 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>КАНБАН — управление ассортиментом</title>
+<title>КАНБАН — анализ ассортимента</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
-:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#172033;background:#f4f6fa}*{box-sizing:border-box}body{margin:0}header{background:#14243b;color:#fff;padding:22px max(18px,calc((100% - 1200px)/2))}h1{margin:0 0 6px;font-size:26px}header p{margin:0;color:#d2dbea}.wrap{max-width:1200px;margin:auto;padding:20px}.toolbar,.stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}.panel,.stat,.lane{background:#fff;border:1px solid #e0e5ee;border-radius:12px;padding:14px}.toolbar{align-items:center}.toolbar input,.toolbar select,.toolbar button{font:inherit;padding:10px;border:1px solid #cbd3e1;border-radius:8px;background:white}.toolbar #search{flex:1 1 260px;min-width:0;width:100%}.toolbar label.panel{flex:0 1 100%;min-width:0}.toolbar label input[type=file]{width:100%;max-width:100%;min-width:0}.toolbar button{background:#1c65d1;color:white;border:0;font-weight:600;cursor:pointer}.stat{flex:1;min-width:150px}.stat small{display:block;color:#657187}.stat strong{font-size:23px}.board{display:grid;grid-template-columns:repeat(4,minmax(200px,1fr));gap:14px}.lane{min-height:240px;background:#eef2f8;padding:12px}.lane h2{font-size:16px;margin:0 0 12px}.count{color:#657187;font-weight:400}.item{background:white;border:1px solid #dce2eb;border-radius:9px;padding:12px;margin-bottom:9px;box-shadow:0 1px 2px #1720330a}.item strong{display:block;margin-bottom:6px}.meta{font-size:12px;color:#647188;line-height:1.6}.tag{display:inline-block;background:#e8f1ff;color:#1a55a5;border-radius:5px;padding:3px 6px;font-size:11px;margin-top:7px}.empty{color:#69768b;font-size:13px}.note{color:#68748a;font-size:13px;margin:14px 0}@media(max-width:980px){.board{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.board{grid-template-columns:1fr}.wrap{padding:12px}header{padding:18px 14px}}
-</style>
-</head>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#172033;background:#f4f6fa}*{box-sizing:border-box}body{margin:0}header{background:#14243b;color:#fff;padding:20px max(16px,calc((100% - 1400px)/2))}h1{margin:0 0 5px;font-size:26px}header p{margin:0;color:#d2dbea}.wrap{max-width:1400px;margin:auto;padding:18px}.toolbar,.stats,.filters,.actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}.panel,.stat{background:#fff;border:1px solid #e0e5ee;border-radius:10px;padding:12px}.toolbar label{flex:1 1 300px;min-width:0}.toolbar input[type=file]{display:block;width:100%;margin-top:8px}.toolbar input,.toolbar select,.toolbar button,.filters input,.filters select,.actions button{font:inherit;padding:10px;border:1px solid #cbd3e1;border-radius:8px;background:#fff;max-width:100%}button{cursor:pointer}.primary{background:#1c65d1!important;color:#fff;border-color:#1c65d1!important;font-weight:600}.stat{flex:1;min-width:145px}.stat small{display:block;color:#657187}.stat strong{font-size:22px}.note{color:#56647a;font-size:13px;line-height:1.5}.status{background:#eaf2ff;border:1px solid #cfe0ff;padding:11px 13px;border-radius:8px;margin:12px 0;font-size:13px;overflow-wrap:anywhere}.board{display:grid;grid-template-columns:repeat(5,minmax(190px,1fr));gap:10px;align-items:start}.lane{background:#eaf0f8;border:1px solid #dce3ee;border-radius:10px;padding:10px;min-width:0}.lane h2{font-size:14px;margin:0 0 10px;line-height:1.4}.count{color:#657187;font-weight:400}.item{background:white;border:1px solid #dce2eb;border-radius:8px;padding:10px;margin-bottom:8px;overflow-wrap:anywhere}.item strong{display:block;margin-bottom:5px;font-size:13px}.meta{font-size:12px;color:#647188;line-height:1.6}.tag{display:inline-block;background:#e8f1ff;color:#1a55a5;border-radius:5px;padding:3px 6px;font-size:11px;margin-top:6px}.empty{color:#69768b;font-size:13px}.section{background:#fff;border:1px solid #e0e5ee;border-radius:10px;padding:12px;margin:16px 0}.section h2{font-size:17px;margin:0 0 10px}.table-wrap{overflow:auto;max-height:65vh;border:1px solid #e2e6ee;border-radius:8px}table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}th,td{padding:8px 9px;border-bottom:1px solid #e6eaf0;text-align:left}th{position:sticky;top:0;background:#f0f4fa;z-index:1}td.num,th.num{text-align:right}.muted{color:#758197}.hidden{display:none!important}@media(max-width:1100px){.board{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.wrap{padding:10px}.board{grid-template-columns:1fr}.stat{min-width:calc(50% - 10px)}header{padding:16px}.toolbar input[type=file]{font-size:13px}}
+</style></head>
 <body>
-<header><h1>КАНБАН</h1><p>Контроль ассортимента и пополнения · Сантехника и инженерные системы</p></header>
+<header><h1>КАНБАН</h1><p>Анализ ассортимента · дефицит · мин. по ТЦ · группа спроса · оценка потерянной выручки</p></header>
 <main class="wrap">
 <div class="toolbar">
-<label class="panel">Загрузить Excel/CSV <input id="file" type="file" accept=".xlsx,.xls,.csv" style="display:block;max-width:250px;margin-top:8px"></label>
-<input id="search" placeholder="Поиск по артикулу или названию">
+<label class="panel">Загрузить отчёт Excel / CSV<input id="file" type="file" accept=".xlsx,.xls,.xlsm,.csv"></label>
+<input id="search" placeholder="Поиск по артикулу, товару, поставщику" style="flex:1 1 240px">
 <select id="category"><option value="">Все категории</option></select>
-<button id="demo">Показать пример</button>
+<button id="export" class="primary">Скачать анализ Excel</button>
+<button id="reset">Сбросить фильтры</button>
 </div>
 <div class="stats">
-<div class="stat"><small>Позиций на доске</small><strong id="total">0</strong></div>
-<div class="stat"><small>Ниже минимума / срочно</small><strong id="low">0</strong></div>
-<div class="stat"><small>Ноль, были продажи</small><strong id="zero">0</strong></div>
-<div class="stat"><small>Пополнение по спросу</small><strong id="restock">0</strong></div>
-<div class="stat"><small>Требуют проверки</small><strong id="check">0</strong></div>
+<div class="stat"><small>Позиций в выборке</small><strong id="total">0</strong></div>
+<div class="stat"><small>Дефицит / ниже минимума</small><strong id="deficit">0</strong></div>
+<div class="stat"><small>Нет остатка, были продажи</small><strong id="zero">0</strong></div>
+<div class="stat"><small>Оценка потерянной выручки*</small><strong id="lost">0 ₽</strong></div>
+<div class="stat"><small>Группа 3: распродажа</small><strong id="g3">0</strong></div>
 </div>
-<p class="note" id="status">Загрузите Excel-отчёт Канбан. Файл обрабатывается локально в браузере и не отправляется на сервер.</p>
+<p class="note">Обработка выполняется в браузере. Исходный файл не отправляется на сервер. Потерянная выручка — оценка по дефицитным единицам × цене, а не подтверждённая сумма продаж. Группа 3 не исключается: остатки показываются для ускоренной распродажи. Группа 2 — только под заказ; группа 4 — временно остановленные поставки.</p>
+<div id="status" class="status">Загрузите отчёт. Приложение автоматически ищет строку заголовков и наиболее подходящий лист Excel.</div>
 <section class="board">
-<div class="lane"><h2>Срочно проверить <span class="count" id="n1">(0)</span></h2><div id="c1"></div></div>
-<div class="lane"><h2>Ноль, были продажи <span class="count" id="n2">(0)</span></h2><div id="c2"></div></div>
-<div class="lane"><h2>Пополнение по спросу <span class="count" id="n3">(0)</span></h2><div id="c3"></div></div>
-<div class="lane"><h2>Проверить данные / статус <span class="count" id="n4">(0)</span></h2><div id="c4"></div></div>
+<div class="lane"><h2>Срочно: дефицит <span id="n1" class="count">(0)</span></h2><div id="c1"></div></div>
+<div class="lane"><h2>Ноль остатка, были продажи <span id="n2" class="count">(0)</span></h2><div id="c2"></div></div>
+<div class="lane"><h2>Группа 3: продать остатки <span id="n3" class="count">(0)</span></h2><div id="c3"></div></div>
+<div class="lane"><h2>Группа 2 / 4: особый статус <span id="n4" class="count">(0)</span></h2><div id="c4"></div></div>
+<div class="lane"><h2>Проверить минимум и данные <span id="n5" class="count">(0)</span></h2><div id="c5"></div></div>
 </section>
+<section class="section"><h2>Сводка по категории и группе спроса</h2><div id="summary" class="table-wrap"></div></section>
+<section class="section"><h2>Все позиции после обработки</h2><div class="filters"><select id="demand"><option value="">Все группы спроса</option><option value="1">Группа 1</option><option value="2">Группа 2</option><option value="3">Группа 3</option><option value="4">Группа 4</option><option value="unknown">Группа не определена</option></select><select id="action"><option value="">Все действия</option><option value="deficit">Есть дефицит</option><option value="zero">Нулевой остаток с продажами</option><option value="g3">Группа 3 с остатком</option><option value="minzero">Мин. по ТЦ = 0</option></select></div><div id="table" class="table-wrap"></div></section>
 </main>
 <script>
-const $=id=>document.getElementById(id);let rows=[];
-const demoRows=[
-{"Приоритет":"P1 — ниже минимума","Категория":"Сантехника","Артикул":"414000001","Наименование":"Пример: смеситель для раковины","Цена продажи":4990,"Остаток":0,"Количество продаж":4,"Рекомендация":"Проверить остаток и сформировать заказ"},
-{"Приоритет":"P1 — ноль, были продажи","Категория":"Сантехника","Артикул":"414000002","Наименование":"Пример: душевой комплект","Цена продажи":7990,"Остаток":0,"Количество продаж":2,"Рекомендация":"Проверить дату и подтверждение поступления"},
-{"Приоритет":"P2 — пополнение по спросу","Категория":"Инженерные системы","Артикул":"453000001","Наименование":"Пример: комплект подключения","Цена продажи":1290,"Остаток":2,"Количество продаж":1,"Рекомендация":"Проверить остатки/заказы, затем пополнить"}];
-function norm(s){return String(s??'').trim().toLowerCase()}
-function pick(r,keys){const k=Object.keys(r);for(const wanted of keys){const found=k.find(x=>norm(x)===norm(wanted)||norm(x).includes(norm(wanted)));if(found!==undefined)return r[found]}return ''}
-function lane(r){
- const p=norm(pick(r,['Приоритет','Статус','Канбан']));
- if(!p)return 4;
- if(p.includes('ноль')||p.includes('zero')||p.includes('нет остат')||p.includes('out of stock'))return 2;
- if(p.includes('p1')||p.includes('ниже минимум')||p.includes('срочно')||p.includes('дефицит'))return 1;
- if(p.includes('p2')||p.includes('пополн')||p.includes('спрос'))return 3;
- return 4;
-}
-function normalizeRows(data){
- const aliases=[
- ['Наименование',['Наименование товара','Наименование номенклатуры','Наименование','Номенклатура','Товар','Название']],
- ['Артикул',['Артикул товара','Артикул','Код товара','Код']],
- ['Категория',['Категория','Отдел','Группа','Подразделение']],
- ['Остаток',['Остаток, шт','Остаток','Количество остаток','Остаток на конец','Конечный остаток','Фактический остаток']],
- ['Количество продаж',['Количество продаж, шт','Количество продаж','Продажи, шт','Кол-во продаж','Продано']],
- ['Цена продажи',['Цена продажи','Розничная цена','Цена']],
- ['Минимум',['Минимальный остаток','Минимум','Мин. остаток','Мин остаток']],
- ['Приоритет',['Приоритет','Статус','Канбан']],
- ['Рекомендация',['Рекомендация','Действие']]
- ];
- return data.map(r=>{const o={...r};for(const [target,names] of aliases){if(pick(o,[target])===''){const value=pick(r,names);if(value!=='')o[target]=value}}return o})
- .filter(r=>String(pick(r,['Наименование','Номенклатура','Товар','Название'])??'').trim()!==''||String(pick(r,['Артикул','Код товара'])??'').trim()!=='');
-}
-function updateCategories(){
- const sel=$('category'),previous=sel.value;
- const cats=[...new Set(rows.map(r=>String(pick(r,['Категория','Отдел','Группа','Подразделение'])||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ru'));
- sel.innerHTML='<option value="">Все категории</option>'+cats.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');
- if(cats.includes(previous))sel.value=previous;
-}
-function money(v){const n=Number(String(v??'').replace(/\s/g,'').replace(',','.'));return v!==''&&Number.isFinite(n)?n.toLocaleString('ru-RU',{maximumFractionDigits:2})+' ₽':(v||'—')}
+const $=id=>document.getElementById(id);let rows=[],sourceName='',sourceSheet='',sourceHeader=0;
+const aliases={
+ name:['наименование товара','наименование номенклатуры','наименование','номенклатура','название товара','название','товар'],
+ article:['артикул товара','артикул','код товара','код номенклатуры','sku','код'],
+ category:['категория','подразделение','отдел','сегмент','товарная группа'],
+ stock:['остаток на конец','остаток на дату','фактический остаток','остаток, шт','остаток шт','остаток','количество остаток','свободный остаток','остаток на складе'],
+ salesQty:['количество продаж','продано, шт','продано шт','продажи, шт','продажи шт','количество, шт','кол-во продаж','количество реализации','реализация, шт','реализация шт','продано'],
+ salesAmount:['сумма продаж','сумма реализации','оборот','выручка','продажи руб','сумма, руб','сумма продаж руб','то, руб','товарооборот'],
+ price:['розничная цена','цена продажи','цена розничная','цена','розница'],
+ minTC:['мин по тц','мин. по тц','мин по тц, шт','минимум по тц','минимум тц','мин тц','мин. тц','мин по торговому центру','минимум по торговому центру'],
+ demand:['группа спроса','группа спроса товара','группа спроса (1-4)','группа спроса 1-4'],
+ supplier:['поставщик','наименование поставщика','контрагент','производитель'],
+ lastSale:['дата последней продажи','последняя продажа','дата последней реализации','дата продажи последняя'],
+ sales30:['продажи за 30 дней','продажи 30 дней','реализация за 30 дней','количество за 30 дней','продажи 30д'],
+ incoming:['в пути','заказано','ожидаемое поступление','входящий заказ','заказ поставщику'],
+ margin:['маржа','прибыль','валовая прибыль','маржинальность']
+};
+function norm(s){return String(s??'').toLowerCase().replace(/ё/g,'е').replace(/[\s\u00a0._()\-№%]/g,'').replace(/[^a-zа-я0-9]/g,'')}
+function parseNum(v){if(typeof v==='number')return Number.isFinite(v)?v:null;let s=String(v??'').trim().replace(/\u00a0/g,'').replace(/\s/g,'').replace(',','.').replace(/[₽рруб%]/gi,'');if(!s||s==='—'||s==='-')return null;const n=Number(s);return Number.isFinite(n)?n:null}
+function findField(headers,key){const variants=aliases[key].map(norm);for(let i=0;i<headers.length;i++){const h=norm(headers[i]);if(!h)continue;if(variants.some(v=>h===v))return i}for(let i=0;i<headers.length;i++){const h=norm(headers[i]);if(!h)continue;if(variants.some(v=>v.length>=5&&(h.includes(v)||v.includes(h))))return i}return -1}
+function detectHeader(matrix){let best={score:0,row:0,fields:{}};const scan=Math.min(matrix.length,40);for(let r=0;r<scan;r++){const h=(matrix[r]||[]).map(v=>String(v??'').trim());const fields={};for(const k of Object.keys(aliases))fields[k]=findField(h,k);let score=0;for(const k of ['name','article','stock','salesQty','salesAmount','minTC','demand','category','supplier'])if(fields[k]>=0)score+=({name:3,article:3,stock:3,salesQty:2,salesAmount:2,minTC:2,demand:2,category:1,supplier:1}[k]);if(fields.name>=0&&fields.article>=0)score+=2;if(score>best.score)best={score,row:r,fields,headers:h}}return best}
+function asGroup(v){const n=parseNum(v);if(n!==null&&[1,2,3,4].includes(Math.trunc(n)))return String(Math.trunc(n));const s=String(v??'').trim();const m=s.match(/(?:групп\w*\s*)?([1-4])(?:\D|$)/i);return m?m[1]:'unknown'}
+function val(arr,idx){return idx>=0?arr[idx]??'':''}
+function parseSheet(ws){const matrix=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});const h=detectHeader(matrix);if(h.score<5||h.fields.name<0&&h.fields.article<0)return null;const out=[];for(let i=h.row+1;i<matrix.length;i++){const a=matrix[i]||[];if(!a.some(v=>String(v??'').trim()!==''))continue;const get=k=>val(a,h.fields[k]);const name=String(get('name')??'').trim(),article=String(get('article')??'').trim();if(!name&&!article)continue;const stock=parseNum(get('stock')),salesQty=parseNum(get('salesQty')),salesAmount=parseNum(get('salesAmount')),price=parseNum(get('price')),minTC=parseNum(get('minTC')),demand=asGroup(get('demand')),incoming=parseNum(get('incoming'));const p=price??(salesQty>0&&salesAmount!==null?salesAmount/salesQty:null);const cat=String(get('category')??'').trim();const g3=demand==='3';const deficit=demand==='1'&&minTC!==null&&minTC>0&&stock!==null?Math.max(0,minTC-stock):0;const zero=(stock!==null&&stock<=0&&(salesQty??0)>0);const minZero=demand==='1'&&minTC===0;const lost=deficit>0&&p!==null?deficit*p:0;const group= demand==='unknown'? 'Не определена': 'Группа '+demand;let lane=5,action='Проверить данные';if(demand==='2'||demand==='4'){lane=4;action=demand==='2'?'Только под заказ':'Проверить причину остановки поставок'}else if(g3){lane=3;action=stock>0?'Ускорить продажу остатка':'Проверить остаток группы 3'}else if(zero){lane=2;action=minZero?'Уточнить минимум по ТЦ: сейчас 0':'Проверить поставку и дефицит'}else if(deficit>0){lane=1;action='Пополнить до минимума по ТЦ'}else if(minZero){lane=5;action='Мин. по ТЦ = 0: поставка не запускается'}else if(demand==='1'&&minTC!==null&&minTC>0&&stock!==null&&stock>=minTC){lane=5;action='Остаток не ниже минимума'}else if(demand==='unknown'||stock===null||minTC===null){lane=5;action='Проверить поля отчёта'}else{lane=5;action='Проверить спрос и остаток'}
+out.push({name,article,category:cat||'Не указана',supplier:String(get('supplier')??'').trim(),stock,salesQty,salesAmount,price:p,minTC,demand,group,lastSale:String(get('lastSale')??'').trim(),sales30:parseNum(get('sales30')),incoming,margin:parseNum(get('margin')),deficit,lost,zero,g3,minZero,lane,action,raw:a});}
+return {rows:out,score:h.score,headerRow:h.row,fields:h.fields,headers:h.headers}}
+function fmt(n,currency=false){if(n===null||n===undefined||!Number.isFinite(n))return '—';return n.toLocaleString('ru-RU',{maximumFractionDigits:2})+(currency?' ₽':'')}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function card(r){const name=pick(r,['Наименование','Номенклатура','Товар','Название'])||'Без названия';const art=pick(r,['Артикул','Код товара'])||'—';const price=pick(r,['Цена продажи','Цена']);const qty=pick(r,['Остаток','Остаток, шт','Количество остаток']);const sales=pick(r,['Количество продаж, шт','Количество продаж','Продажи, шт']);const cat=pick(r,['Категория','Отдел'])||'';const rec=pick(r,['Рекомендация','Действие'])||'Проверить остатки и заказы';return '<article class="item"><strong>'+esc(name)+'</strong><div class="meta">Артикул: '+esc(art)+'<br>Цена: '+esc(money(price))+(qty!==''?'<br>Остаток: '+esc(qty):'')+(sales!==''?'<br>Продажи, шт.: '+esc(sales):'')+'</div><span class="tag">'+esc(cat||rec)+'</span><div class="meta" style="margin-top:7px">'+esc(rec)+'</div></article>'}
-function render(){
- const q=norm($('search').value),cat=$('category').value;
- const filtered=rows.filter(r=>(!cat||String(pick(r,['Категория','Отдел','Группа','Подразделение'])).trim()===cat)&&(!q||norm(Object.values(r).join(' ')).includes(q)));
- $('total').textContent=filtered.length;
- $('low').textContent=filtered.filter(r=>lane(r)===1).length;
- $('zero').textContent=filtered.filter(r=>lane(r)===2).length;
- $('restock').textContent=filtered.filter(r=>lane(r)===3).length;
- $('check').textContent=filtered.filter(r=>lane(r)===4).length;
- [1,2,3,4].forEach(n=>{const a=filtered.filter(r=>lane(r)===n);$('n'+n).textContent='('+a.length+')';$('c'+n).innerHTML=a.map(card).join('')||'<p class="empty">Нет позиций</p>'});
-}
-$('search').addEventListener('input',render);$('category').addEventListener('change',render);$('demo').onclick=()=>{if(rows.length&&!confirm('Показать демонстрационные данные вместо текущего отчёта? Текущие данные будут заменены только в этой вкладке.'))return;rows=normalizeRows(demoRows.map(r=>({...r})));$('search').value='';updateCategories();$('category').value='';$('status').textContent='ДЕМО-РЕЖИМ: показаны 3 условные позиции, это не реальные остатки. Для рабочего анализа загрузите Excel/CSV.';render()};
-$('file').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const buf=await f.arrayBuffer();let wb;if(f.name.toLowerCase().endsWith('.csv')){const txt=new TextDecoder('utf-8').decode(buf);wb=XLSX.read(txt,{type:'string'})}else wb=XLSX.read(buf,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];rows=normalizeRows(XLSX.utils.sheet_to_json(ws,{defval:''}));updateCategories();$('status').textContent='Загружен рабочий файл: '+f.name+' · лист: '+wb.SheetNames[0]+' · строк данных: '+rows.length+'. Данные обработаны в браузере; проверьте, что выбраны правильный лист и заголовки.';render()}catch(err){$('status').textContent='Не удалось прочитать файл: '+err.message}});
+function filtered(){const q=norm($('search').value),cat=$('category').value,d=$('demand').value,act=$('action').value;return rows.filter(r=>(!q||norm([r.name,r.article,r.supplier].join(' ')).includes(q))&&(!cat||r.category===cat)&&(!d||(d==='unknown'?r.demand==='unknown':r.demand===d))&&(!act||(act==='deficit'?r.deficit>0:act==='zero'?r.zero:act==='g3'?r.g3&&((r.stock??0)>0):act==='minzero'?r.minZero:false)))}
+function card(r){return '<article class="item"><strong>'+esc(r.name||'Без названия')+'</strong><div class="meta">Артикул: '+esc(r.article||'—')+'<br>Категория: '+esc(r.category)+'<br>Поставщик: '+esc(r.supplier||'—')+'<br>Остаток: '+esc(fmt(r.stock))+' · Продажи: '+esc(fmt(r.salesQty))+'<br>Мин. по ТЦ: '+esc(fmt(r.minTC))+' · Группа: '+esc(r.group)+'<br>Дефицит: '+esc(fmt(r.deficit))+' шт. · Потенциал: '+esc(fmt(r.lost,true))+'</div><span class="tag">'+esc(r.action)+'</span></article>'}
+function tableHtml(rs){if(!rs.length)return '<p class="empty">Нет позиций по выбранным условиям.</p>';const cols=[['Артикул',r=>r.article],['Наименование',r=>r.name],['Категория',r=>r.category],['Поставщик',r=>r.supplier],['Остаток',r=>fmt(r.stock)],['Продажи, шт.',r=>fmt(r.salesQty)],['Продажи, ₽',r=>fmt(r.salesAmount,true)],['Цена, ₽',r=>fmt(r.price,true)],['Мин. по ТЦ',r=>fmt(r.minTC)],['Группа спроса',r=>r.group],['Дефицит, шт.',r=>fmt(r.deficit)],['Потенциал выручки, ₽',r=>fmt(r.lost,true)],['Действие',r=>r.action]];return '<table><thead><tr>'+cols.map(c=>'<th>'+c[0]+'</th>').join('')+'</tr></thead><tbody>'+rs.map(r=>'<tr>'+cols.map(c=>'<td>'+esc(c[1](r))+'</td>').join('')+'</tr>').join('')+'</tbody></table>'}
+function render(){const rs=filtered();$('total').textContent=rs.length;$('deficit').textContent=rs.filter(r=>r.deficit>0).length;$('zero').textContent=rs.filter(r=>r.zero).length;$('lost').textContent=fmt(rs.reduce((s,r)=>s+r.lost,0),true);$('g3').textContent=rs.filter(r=>r.g3).length;for(let n=1;n<=5;n++){const arr=rs.filter(r=>r.lane===n);$('n'+n).textContent='('+arr.length+')';$('c'+n).innerHTML=arr.slice(0,250).map(card).join('')||'<p class="empty">Нет позиций</p>'}const summary={};for(const r of rs){const key=r.category+'||'+r.group;if(!summary[key])summary[key]={category:r.category,group:r.group,count:0,stock:0,deficit:0,lost:0,g3count:0,g3stock:0};const s=summary[key];s.count++;s.stock+=r.stock??0;s.deficit+=r.deficit;s.lost+=r.lost;if(r.g3){s.g3count++;s.g3stock+=r.stock??0}}const sums=Object.values(summary).sort((a,b)=>a.category.localeCompare(b.category,'ru')||a.group.localeCompare(b.group,'ru'));$('summary').innerHTML=sums.length?'<table><thead><tr><th>Категория</th><th>Группа спроса</th><th class="num">Позиций</th><th class="num">Остаток, шт.</th><th class="num">Дефицит, шт.</th><th class="num">Потенциал выручки, ₽</th><th class="num">Позиций гр. 3</th><th class="num">Остаток гр. 3, шт.</th></tr></thead><tbody>'+sums.map(s=>'<tr><td>'+esc(s.category)+'</td><td>'+esc(s.group)+'</td><td class="num">'+s.count+'</td><td class="num">'+fmt(s.stock)+'</td><td class="num">'+fmt(s.deficit)+'</td><td class="num">'+fmt(s.lost,true)+'</td><td class="num">'+s.g3count+'</td><td class="num">'+fmt(s.g3stock)+'</td></tr>').join('')+'</tbody></table>':'<p class="empty">Загрузите отчёт для формирования сводки.</p>';$('table').innerHTML=tableHtml(rs)}
+function updateCategories(){const old=$('category').value;const cats=[...new Set(rows.map(r=>r.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ru'));$('category').innerHTML='<option value="">Все категории</option>'+cats.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');if(cats.includes(old))$('category').value=old}
+$('file').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;if(!window.XLSX){$('status').textContent='Ошибка: библиотека чтения Excel не загрузилась. Проверьте подключение к интернету и обновите страницу.';return}try{$('status').textContent='Читаю файл и ищу лист с данными…';const buf=await f.arrayBuffer();let wb;if(f.name.toLowerCase().endsWith('.csv')){const txt=new TextDecoder('utf-8').decode(buf);wb=XLSX.read(txt,{type:'string',cellDates:true})}else wb=XLSX.read(buf,{type:'array',cellDates:true});let best=null;for(const sn of wb.SheetNames){const res=parseSheet(wb.Sheets[sn]);if(res&&(!best||res.score>best.score||res.rows.length>best.rows.length)){best={...res,sheet:sn}}}if(!best||!best.rows.length)throw new Error('Не найден лист с распознаваемыми колонками. Проверьте, что есть столбец «Артикул» или «Наименование» и данные ниже заголовков.');rows=best.rows;sourceName=f.name;sourceSheet=best.sheet;sourceHeader=best.headerRow;updateCategories();$('status').textContent='Загружен: '+sourceName+' · лист: '+sourceSheet+' · строка заголовков: '+(sourceHeader+1)+' · обработано позиций: '+rows.length+'. Найдены поля: '+Object.keys(best.fields).filter(k=>best.fields[k]>=0).map(k=>({name:'наименование',article:'артикул',category:'категория',stock:'остаток',salesQty:'продажи, шт.',salesAmount:'продажи, ₽',price:'цена',minTC:'мин. по ТЦ',demand:'группа спроса',supplier:'поставщик'}[k]||k)).join(', ')+'.';render()}catch(err){rows=[];updateCategories();render();$('status').textContent='Не удалось обработать файл: '+err.message+' Если пришлёте скрин заголовков, добавлю распознавание нужных столбцов.'}});
+['search','category','demand','action'].forEach(id=>$(id).addEventListener(id==='search'?'input':'change',render));$('reset').onclick=()=>{$('search').value='';$('category').value='';$('demand').value='';$('action').value='';render()};
+$('export').onclick=()=>{if(!rows.length){$('status').textContent='Сначала загрузите отчёт Excel.';return}if(!window.XLSX){$('status').textContent='Библиотека Excel не загрузилась.';return}const rs=filtered();const data=rs.map(r=>({'Артикул':r.article,'Наименование':r.name,'Категория':r.category,'Поставщик':r.supplier,'Остаток':r.stock,'Продажи, шт.':r.salesQty,'Продажи, ₽':r.salesAmount,'Цена, ₽':r.price,'Мин. по ТЦ':r.minTC,'Группа спроса':r.demand,'Дефицит, шт.':r.deficit,'Оценка потерянной выручки, ₽':r.lost,'Нулевой остаток при продажах':r.zero?'Да':'Нет','Действие':r.action}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data),'Анализ');const summary={};for(const r of rs){const k=r.category+'||'+r.group;if(!summary[k])summary[k]={'Категория':r.category,'Группа спроса':r.group,'Позиций':0,'Остаток, шт.':0,'Дефицит, шт.':0,'Оценка потерянной выручки, ₽':0,'Позиций группы 3':0,'Остаток группы 3, шт.':0};const s=summary[k];s['Позиций']++;s['Остаток, шт.']+=r.stock??0;s['Дефицит, шт.']+=r.deficit;s['Оценка потерянной выручки, ₽']+=r.lost;if(r.g3){s['Позиций группы 3']++;s['Остаток группы 3, шт.']+=r.stock??0}}XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(Object.values(summary)),'Сводка');XLSX.writeFile(wb,'КАНБАН_анализ_'+new Date().toISOString().slice(0,10)+'.xlsx');$('status').textContent='Файл анализа подготовлен для скачивания. Расчёты относятся к текущему фильтру.'};
 render();
-</script>
-</body></html>
+</script></body></html>
